@@ -57,6 +57,9 @@ class ToolsCalibrate:
         self.gcode.register_command('TOOL_CALIBRATE_PROBE_OFFSET',
                                     self.cmd_TOOL_CALIBRATE_PROBE_OFFSET,
                                     desc=self.cmd_TOOL_CALIBRATE_PROBE_OFFSET_help)
+        self.gcode.register_command('GET_NOZZLE_OFFSET_FROM_Z0',
+                                    self.cmd_GET_NOZZLE_OFFSET_FROM_Z0,
+                                    desc=self.cmd_GET_NOZZLE_OFFSET_FROM_Z0_help)
         self.gcode.register_command('TOOL_CALIBRATE_QUERY_PROBE',
                                     self.cmd_TOOL_CALIBRATE_QUERY_PROBE,
                                     desc=self.cmd_TOOL_CALIBRATE_QUERY_PROBE_help)
@@ -175,6 +178,20 @@ class ToolsCalibrate:
         # back to start pos
         toolhead.move(start_pos, self.travel_speed)
         toolhead.set_position(start_pos)
+
+    cmd_GET_NOZZLE_OFFSET_FROM_Z0_help = "Get the tool probe offset to homed z value"
+
+    def cmd_GET_NOZZLE_OFFSET_FROM_Z0(self, gcmd):
+        toolhead = self.printer.lookup_object('toolhead')
+        start_pos = toolhead.get_position()
+        nozzle_z = self.probe_multi_axis.run_probe("z-", gcmd, speed_ratio=0.5)[2]
+        self.last_probe_offset = nozzle_z
+        self.gcode.respond_info(
+            "%s: z_offset: %.3f" % (self.probe_name, nozzle_z))
+        # back to start pos
+        toolhead.move(start_pos, self.travel_speed)
+        toolhead.set_position(start_pos)
+        return nozzle_z
 
     def get_status(self, eventtime):
         return {'last_result': self.last_result,
